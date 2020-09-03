@@ -18,7 +18,7 @@ from ...ext import SpanTypes, net, memcached as memcachedx
 from ...internal.logger import get_logger
 from ...pin import Pin
 from ...settings import config
-from ...wrappers import ObjectProxy
+from ...utils.wrappers import ObjectProxy
 
 log = get_logger(__name__)
 

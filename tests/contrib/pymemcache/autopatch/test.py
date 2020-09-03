@@ -1,6 +1,6 @@
 import pymemcache
 import unittest
-from ddtrace.vendor import wrapt
+from ddtrace.utils.wrappers import ObjectProxy
 
 
 class AutoPatchTestCase(unittest.TestCase):
@@ -20,4 +20,4 @@ class AutoPatchTestCase(unittest.TestCase):
     """
 
     def test_patch(self):
-        assert issubclass(pymemcache.client.base.Client, wrapt.ObjectProxy)
+        assert issubclass(pymemcache.client.base.Client, ObjectProxy)
