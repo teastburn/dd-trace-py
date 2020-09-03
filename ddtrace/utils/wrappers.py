@@ -1,39 +1,41 @@
-from ddtrace.vendor import wrapt
 import inspect
+
+from ddtrace.vendor.wrapt import (
+    FunctionWrapper,
+    ObjectProxy,
+    apply_patch,
+    function_wrapper,
+    patch_function_wrapper,
+    resolve_path,
+)
 
 from .deprecation import deprecated
 
 
 def _wrap_object(module, name, factory, args=(), kwargs={}):
-    (parent, attribute, original) = wrapt.wrappers.resolve_path(module, name)
+    (parent, attribute, original) = resolve_path(module, name)
     # avoid wrapping if object already wrapped
-    if hasattr(original, "__wrapped__"):
+    if isinstance(original, ObjectProxy):
         return original
     wrapper = factory(original, *args, **kwargs)
-    wrapt.wrappers.apply_patch(parent, attribute, wrapper)
+    apply_patch(parent, attribute, wrapper)
     return wrapper
 
 
 def wrap_function_wrapper(module, name, wrapper):
-    return _wrap_object(module, name, wrapt.FunctionWrapper, (wrapper,))
-
-
-FunctionWrapper = wrapt.FunctionWrapper
-function_wrapper = wrapt.wrappers.function_wrapper
-patch_function_wrapper = wrapt.patch_function_wrapper
-ObjectProxy = wrapt.ObjectProxy
+    return _wrap_object(module, name, FunctionWrapper, (wrapper,))
 
 
 def iswrapped(obj, attr=None):
     """Returns whether an attribute is wrapped or not."""
     if attr is not None:
         obj = getattr(obj, attr, None)
-    return hasattr(obj, "__wrapped__") and isinstance(obj, wrapt.ObjectProxy)
+    return hasattr(obj, "__wrapped__") and isinstance(obj, ObjectProxy)
 
 
 def unwrap(obj, attr):
     f = getattr(obj, attr, None)
-    if f and isinstance(f, wrapt.ObjectProxy) and hasattr(f, "__wrapped__"):
+    if f and isinstance(f, ObjectProxy) and hasattr(f, "__wrapped__"):
         setattr(obj, attr, f.__wrapped__)
 
 
