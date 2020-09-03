@@ -1,6 +1,6 @@
 import inspect
 
-from ddtrace.vendor.wrapt import (
+from ddtrace.vendor.wrapt import (  # noqa: F401
     FunctionWrapper,
     ObjectProxy,
     apply_patch,
