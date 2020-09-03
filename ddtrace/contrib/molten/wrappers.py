@@ -1,8 +1,8 @@
-from ddtrace.vendor import wrapt
 import molten
 
 from ... import Pin
 from ...utils.importlib import func_name
+from ...utils.wrappers import function_wrapper, ObjectProxy
 
 MOLTEN_ROUTE = 'molten.route'
 
@@ -19,7 +19,7 @@ def trace_wrapped(resource, wrapped, *args, **kwargs):
 def trace_func(resource):
     """Trace calls to function using provided resource name
     """
-    @wrapt.function_wrapper
+    @function_wrapper
     def _trace_func(wrapped, instance, args, kwargs):
         pin = Pin.get_from(molten)
 
@@ -32,7 +32,7 @@ def trace_func(resource):
     return _trace_func
 
 
-class WrapperComponent(wrapt.ObjectProxy):
+class WrapperComponent(ObjectProxy):
     """ Tracing of components """
     def can_handle_parameter(self, *args, **kwargs):
         func = self.__wrapped__.can_handle_parameter
@@ -44,7 +44,7 @@ class WrapperComponent(wrapt.ObjectProxy):
     # be thrown since paramter types cannot be determined
 
 
-class WrapperRenderer(wrapt.ObjectProxy):
+class WrapperRenderer(ObjectProxy):
     """ Tracing of renderers """
     def render(self, *args, **kwargs):
         func = self.__wrapped__.render
@@ -53,7 +53,7 @@ class WrapperRenderer(wrapt.ObjectProxy):
         return trace_wrapped(resource, func, *args, **kwargs)
 
 
-class WrapperMiddleware(wrapt.ObjectProxy):
+class WrapperMiddleware(ObjectProxy):
     """ Tracing of callable functional-middleware """
     def __call__(self, *args, **kwargs):
         func = self.__wrapped__.__call__
@@ -61,7 +61,7 @@ class WrapperMiddleware(wrapt.ObjectProxy):
         return trace_wrapped(resource, func, *args, **kwargs)
 
 
-class WrapperRouter(wrapt.ObjectProxy):
+class WrapperRouter(ObjectProxy):
     """ Tracing of router on the way back from a matched route """
     def match(self, *args, **kwargs):
         # catch matched route and wrap tracer around its handler and set root span resource

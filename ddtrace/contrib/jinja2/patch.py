@@ -1,5 +1,4 @@
 import jinja2
-from ddtrace.vendor.wrapt import wrap_function_wrapper as _w
 
 from ddtrace import config
 
@@ -7,7 +6,7 @@ from ...constants import SPAN_MEASURED_KEY
 from ...ext import SpanTypes
 from ...utils.formats import get_env
 from ...pin import Pin
-from ...utils.wrappers import unwrap as _u
+from ...utils.wrappers import unwrap as _u, wrap_function_wrapper as _w
 from .constants import DEFAULT_TEMPLATE_NAME
 
 

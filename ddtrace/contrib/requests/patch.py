@@ -1,12 +1,11 @@
 import requests
 
-from ddtrace.vendor.wrapt import wrap_function_wrapper as _w
 
 from ddtrace import config
 
 from ...pin import Pin
 from ...utils.formats import asbool, get_env
-from ...utils.wrappers import unwrap as _u
+from ...utils.wrappers import unwrap as _u, wrap_function_wrapper as _w
 from .legacy import _distributed_tracing, _distributed_tracing_setter
 from .constants import DEFAULT_SERVICE
 from .connection import _wrap_send

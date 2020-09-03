@@ -1,5 +1,4 @@
 import asyncio
-from ddtrace.vendor import wrapt
 from ddtrace import config
 import aiobotocore.client
 
@@ -14,7 +13,7 @@ from ...pin import Pin
 from ...ext import SpanTypes, http, aws
 from ...compat import PYTHON_VERSION_INFO
 from ...utils.formats import deep_getattr
-from ...utils.wrappers import unwrap
+from ...utils.wrappers import wrap_function_wrapper as _w, unwrap as _u, ObjectProxy
 
 
 ARGS_NAME = ('action', 'params', 'path', 'verb')
@@ -26,17 +25,17 @@ def patch():
         return
     setattr(aiobotocore.client, '_datadog_patch', True)
 
-    wrapt.wrap_function_wrapper('aiobotocore.client', 'AioBaseClient._make_api_call', _wrapped_api_call)
+    _w('aiobotocore.client', 'AioBaseClient._make_api_call', _wrapped_api_call)
     Pin(service=config.service or "aws", app="aws").onto(aiobotocore.client.AioBaseClient)
 
 
 def unpatch():
     if getattr(aiobotocore.client, '_datadog_patch', False):
         setattr(aiobotocore.client, '_datadog_patch', False)
-        unwrap(aiobotocore.client.AioBaseClient, '_make_api_call')
+        _u(aiobotocore.client.AioBaseClient, '_make_api_call')
 
 
-class WrappedClientResponseContentProxy(wrapt.ObjectProxy):
+class WrappedClientResponseContentProxy(ObjectProxy):
     def __init__(self, body, pin, parent_span):
         super(WrappedClientResponseContentProxy, self).__init__(body)
         self._self_pin = pin

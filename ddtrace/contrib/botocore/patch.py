@@ -2,7 +2,6 @@
 Trace queries to aws api done via botocore client
 """
 # 3p
-from ddtrace.vendor import wrapt
 from ddtrace import config
 import botocore.client
 
@@ -11,7 +10,7 @@ from ...constants import ANALYTICS_SAMPLE_RATE_KEY, SPAN_MEASURED_KEY
 from ...pin import Pin
 from ...ext import SpanTypes, http, aws
 from ...utils.formats import deep_getattr
-from ...utils.wrappers import unwrap
+from ...utils.wrappers import wrap_function_wrapper as _w, unwrap as _u
 
 
 # Original botocore client class
@@ -26,14 +25,14 @@ def patch():
         return
     setattr(botocore.client, '_datadog_patch', True)
 
-    wrapt.wrap_function_wrapper('botocore.client', 'BaseClient._make_api_call', patched_api_call)
+    _w('botocore.client', 'BaseClient._make_api_call', patched_api_call)
     Pin(service='aws', app='aws').onto(botocore.client.BaseClient)
 
 
 def unpatch():
     if getattr(botocore.client, '_datadog_patch', False):
         setattr(botocore.client, '_datadog_patch', False)
-        unwrap(botocore.client.BaseClient, '_make_api_call')
+        _u(botocore.client.BaseClient, '_make_api_call')
 
 
 def patched_api_call(original_func, instance, args, kwargs):

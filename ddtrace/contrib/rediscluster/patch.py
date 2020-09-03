@@ -1,13 +1,12 @@
 # 3p
 import rediscluster
-from ddtrace.vendor import wrapt
 
 # project
 from ddtrace import config
 from ...constants import ANALYTICS_SAMPLE_RATE_KEY, SPAN_MEASURED_KEY
 from ...pin import Pin
 from ...ext import SpanTypes, redis as redisx
-from ...utils.wrappers import unwrap
+from ...utils.wrappers import unwrap as _u, wrap_function_wrapper as _w
 from ..redis.patch import traced_execute_command, traced_pipeline
 from ..redis.util import format_command_args
 
@@ -24,7 +23,6 @@ def patch():
         return
     setattr(rediscluster, '_datadog_patch', True)
 
-    _w = wrapt.wrap_function_wrapper
     if REDISCLUSTER_VERSION >= (2, 0, 0):
         _w('rediscluster', 'RedisCluster.execute_command', traced_execute_command)
         _w('rediscluster', 'RedisCluster.pipeline', traced_pipeline)
@@ -42,13 +40,13 @@ def unpatch():
         setattr(rediscluster, '_datadog_patch', False)
 
         if REDISCLUSTER_VERSION >= (2, 0, 0):
-            unwrap(rediscluster.RedisCluster, 'execute_command')
-            unwrap(rediscluster.RedisCluster, 'pipeline')
-            unwrap(rediscluster.ClusterPipeline, 'execute')
+            _u(rediscluster.RedisCluster, 'execute_command')
+            _u(rediscluster.RedisCluster, 'pipeline')
+            _u(rediscluster.ClusterPipeline, 'execute')
         else:
-            unwrap(rediscluster.StrictRedisCluster, 'execute_command')
-            unwrap(rediscluster.StrictRedisCluster, 'pipeline')
-            unwrap(rediscluster.StrictClusterPipeline, 'execute')
+            _u(rediscluster.StrictRedisCluster, 'execute_command')
+            _u(rediscluster.StrictRedisCluster, 'pipeline')
+            _u(rediscluster.StrictClusterPipeline, 'execute')
 
 
 #

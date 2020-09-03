@@ -1,9 +1,8 @@
 import sqlalchemy
 
-from ddtrace.vendor.wrapt import wrap_function_wrapper as _w
 
 from .engine import _wrap_create_engine
-from ...utils.wrappers import unwrap
+from ...utils.wrappers import unwrap as _u, wrap_function_wrapper as _w
 
 
 def patch():
@@ -20,5 +19,5 @@ def unpatch():
     # unpatch sqlalchemy
     if getattr(sqlalchemy.engine, '__datadog_patch', False):
         setattr(sqlalchemy.engine, '__datadog_patch', False)
-        unwrap(sqlalchemy, 'create_engine')
-        unwrap(sqlalchemy.engine, 'create_engine')
+        _u(sqlalchemy, 'create_engine')
+        _u(sqlalchemy.engine, 'create_engine')

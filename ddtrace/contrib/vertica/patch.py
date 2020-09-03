@@ -1,7 +1,5 @@
 import importlib
 
-from ddtrace.vendor import wrapt
-
 import ddtrace
 from ...constants import ANALYTICS_SAMPLE_RATE_KEY, SPAN_MEASURED_KEY
 from ...ext import SpanTypes, db as dbx
@@ -9,7 +7,7 @@ from ...ext import net
 from ...internal.logger import get_logger
 from ...pin import Pin
 from ...settings import config
-from ...utils.wrappers import unwrap
+from ...utils.wrappers import patch_function_wrapper, unwrap as _u
 from .constants import APP
 
 
@@ -139,7 +137,7 @@ def _uninstall(config):
             continue
 
         for patch_routine in config['patch'][patch_class_path]['routines']:
-            unwrap(cls, patch_routine)
+            _u(cls, patch_routine)
 
 
 def _find_routine_config(config, instance, routine_name):
@@ -163,7 +161,7 @@ def _install_init(patch_item, patch_class, patch_mod, config):
     patch_class_routine = '{}.{}'.format(patch_class, '__init__')
 
     # patch the __init__ of the class with a Pin instance containing the defaults
-    @wrapt.patch_function_wrapper(patch_mod, patch_class_routine)
+    @patch_function_wrapper(patch_mod, patch_class_routine)
     def init_wrapper(wrapped, instance, args, kwargs):
         r = wrapped(*args, **kwargs)
 
@@ -181,7 +179,7 @@ def _install_init(patch_item, patch_class, patch_mod, config):
 def _install_routine(patch_routine, patch_class, patch_mod, config):
     patch_class_routine = '{}.{}'.format(patch_class, patch_routine)
 
-    @wrapt.patch_function_wrapper(patch_mod, patch_class_routine)
+    @patch_function_wrapper(patch_mod, patch_class_routine)
     def wrapper(wrapped, instance, args, kwargs):
         # TODO?: remove Pin dependence
         pin = Pin.get_from(instance)

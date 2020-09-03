@@ -1,10 +1,10 @@
 import falcon
 
 from ddtrace import config, tracer
-from ddtrace.vendor import wrapt
 
 from .middleware import TraceMiddleware
 from ...utils.formats import asbool, get_env
+from ...utils.wrappers import wrap_function_wrapper as _w
 
 
 def patch():
@@ -16,7 +16,7 @@ def patch():
         return
 
     setattr(falcon, '_datadog_patch', True)
-    wrapt.wrap_function_wrapper('falcon', 'API.__init__', traced_init)
+    _w('falcon', 'API.__init__', traced_init)
 
 
 def traced_init(wrapped, instance, args, kwargs):

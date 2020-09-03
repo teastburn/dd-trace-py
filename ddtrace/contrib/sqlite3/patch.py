@@ -1,27 +1,22 @@
 # 3p
 import sqlite3
 import sqlite3.dbapi2
-from ddtrace.vendor import wrapt
 
 # project
 from ...contrib.dbapi import TracedConnection, TracedCursor, FetchTracedCursor
 from ...pin import Pin
 from ...settings import config
-
-# Original connect method
-_connect = sqlite3.connect
+from ...utils.wrappers import wrap_function_wrapper as _w, unwrap as _u
 
 
 def patch():
-    wrapped = wrapt.FunctionWrapper(_connect, traced_connect)
-
-    setattr(sqlite3, 'connect', wrapped)
-    setattr(sqlite3.dbapi2, 'connect', wrapped)
+    _w(sqlite3, 'connect', traced_connect)
+    _w(sqlite3.dbapi2, 'connect', traced_connect)
 
 
 def unpatch():
-    sqlite3.connect = _connect
-    sqlite3.dbapi2.connect = _connect
+    _u(sqlite3, "connect")
+    _u(sqlite3.dbapi2, "connect")
 
 
 def traced_connect(func, _, args, kwargs):

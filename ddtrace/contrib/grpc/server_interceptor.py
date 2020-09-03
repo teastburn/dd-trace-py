@@ -1,5 +1,4 @@
 import grpc
-from ddtrace.vendor import wrapt
 
 from ddtrace import config
 from ddtrace.ext import errors
@@ -9,6 +8,7 @@ from ... import utils
 from ...constants import ANALYTICS_SAMPLE_RATE_KEY, SPAN_MEASURED_KEY
 from ...ext import SpanTypes
 from ...propagation.http import HTTPPropagator
+from ...utils.wrappers import ObjectProxy
 from . import constants
 from .utils import parse_method_path
 
@@ -55,7 +55,7 @@ def _wrap_response_iterator(response_iterator, server_context, span):
         span.finish()
 
 
-class _TracedRpcMethodHandler(wrapt.ObjectProxy):
+class _TracedRpcMethodHandler(ObjectProxy):
     def __init__(self, pin, handler_call_details, wrapped):
         super(_TracedRpcMethodHandler, self).__init__(wrapped)
         self._pin = pin

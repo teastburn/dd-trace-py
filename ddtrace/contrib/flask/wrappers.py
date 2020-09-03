@@ -1,7 +1,6 @@
-from ddtrace.vendor.wrapt import function_wrapper
-
 from ...pin import Pin
 from ...utils.importlib import func_name
+from ...utils.wrappers import function_wrapper
 from .helpers import get_current_app
 
 

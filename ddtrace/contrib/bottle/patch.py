@@ -3,7 +3,7 @@ from .trace import TracePlugin
 import bottle
 
 from ddtrace import config
-from ddtrace.vendor import wrapt
+from ...utils.wrappers import wrap_function_wrapper as _w
 
 
 def patch():
@@ -13,7 +13,7 @@ def patch():
         return
 
     setattr(bottle, '_datadog_patch', True)
-    wrapt.wrap_function_wrapper('bottle', 'Bottle.__init__', traced_init)
+    _w('bottle', 'Bottle.__init__', traced_init)
 
 
 def traced_init(wrapped, instance, args, kwargs):

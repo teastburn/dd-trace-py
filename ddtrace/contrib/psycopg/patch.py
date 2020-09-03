@@ -1,11 +1,11 @@
 # 3p
 import psycopg2
-from ddtrace.vendor import wrapt
 
 # project
 from ddtrace import Pin, config
 from ddtrace.contrib import dbapi
 from ddtrace.ext import sql, net, db
+from ddtrace.utils.wrappers import wrap_function_wrapper as _w, ObjectProxy
 
 # Original connect method
 _connect = psycopg2.connect
@@ -31,7 +31,7 @@ def patch():
         return
     setattr(psycopg2, '_datadog_patch', True)
 
-    wrapt.wrap_function_wrapper(psycopg2, 'connect', patched_connect)
+    _w(psycopg2, 'connect', patched_connect)
     _patch_extensions(_psycopg2_extensions)  # do this early just in case
 
 
@@ -98,9 +98,9 @@ def _patch_extensions(_extensions):
     # we must patch extensions all the time (it's pretty harmless) so split
     # from global patching of connections. must be idempotent.
     for _, module, func, wrapper in _extensions:
-        if not hasattr(module, func) or isinstance(getattr(module, func), wrapt.ObjectProxy):
+        if not hasattr(module, func) or isinstance(getattr(module, func), ObjectProxy):
             continue
-        wrapt.wrap_function_wrapper(module, func, wrapper)
+        _w(module, func, wrapper)
 
 
 def _unpatch_extensions(_extensions):
@@ -126,7 +126,7 @@ def _extensions_register_type(func, _, args, kwargs):
 
     # register_type performs a c-level check of the object
     # type so we must be sure to pass in the actual db connection
-    if scope and isinstance(scope, wrapt.ObjectProxy):
+    if scope and isinstance(scope, ObjectProxy):
         scope = scope.__wrapped__
 
     return func(obj, scope) if scope else func(obj)
@@ -139,7 +139,7 @@ def _extensions_quote_ident(func, _, args, kwargs):
 
     # register_type performs a c-level check of the object
     # type so we must be sure to pass in the actual db connection
-    if scope and isinstance(scope, wrapt.ObjectProxy):
+    if scope and isinstance(scope, ObjectProxy):
         scope = scope.__wrapped__
 
     return func(obj, scope) if scope else func(obj)
@@ -152,7 +152,7 @@ def _extensions_adapt(func, _, args, kwargs):
     return adapt
 
 
-class AdapterWrapper(wrapt.ObjectProxy):
+class AdapterWrapper(ObjectProxy):
     def prepare(self, *args, **kwargs):
         func = self.__wrapped__.prepare
         if not args:
@@ -161,7 +161,7 @@ class AdapterWrapper(wrapt.ObjectProxy):
 
         # prepare performs a c-level check of the object type so
         # we must be sure to pass in the actual db connection
-        if isinstance(conn, wrapt.ObjectProxy):
+        if isinstance(conn, ObjectProxy):
             conn = conn.__wrapped__
 
         return func(conn, *args[1:], **kwargs)

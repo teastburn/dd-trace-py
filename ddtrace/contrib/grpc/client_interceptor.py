@@ -1,6 +1,5 @@
 import collections
 import grpc
-from ddtrace.vendor import wrapt
 
 from ddtrace import config
 from ddtrace.compat import to_unicode
@@ -9,6 +8,7 @@ from ... import utils
 from ...internal.logger import get_logger
 from ...propagation.http import HTTPPropagator
 from ...constants import ANALYTICS_SAMPLE_RATE_KEY
+from ...utils.wrappers import ObjectProxy
 from . import constants
 from .utils import parse_method_path
 
@@ -106,7 +106,7 @@ def _handle_error(span, response_error, status_code):
             status_code = to_unicode(response_error.code())
 
 
-class _WrappedResponseCallFuture(wrapt.ObjectProxy):
+class _WrappedResponseCallFuture(ObjectProxy):
     def __init__(self, wrapped, span):
         super(_WrappedResponseCallFuture, self).__init__(wrapped)
         self._span = span

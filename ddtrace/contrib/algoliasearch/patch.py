@@ -1,8 +1,7 @@
 from ...constants import SPAN_MEASURED_KEY
 from ddtrace.pin import Pin
 from ddtrace.settings import config
-from ddtrace.utils.wrappers import unwrap as _u
-from ddtrace.vendor.wrapt import wrap_function_wrapper as _w
+from ddtrace.utils.wrappers import unwrap as _u, wrap_function_wrapper as _w
 
 DD_PATCH_ATTR = '_datadog_patch'
 

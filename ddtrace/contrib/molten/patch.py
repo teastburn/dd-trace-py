@@ -1,6 +1,3 @@
-from ddtrace.vendor import wrapt
-from ddtrace.vendor.wrapt import wrap_function_wrapper as _w
-
 import molten
 
 from ... import Pin, config
@@ -10,7 +7,7 @@ from ...ext import SpanTypes, http
 from ...propagation.http import HTTPPropagator
 from ...utils.formats import asbool, get_env
 from ...utils.importlib import func_name
-from ...utils.wrappers import unwrap as _u
+from ...utils.wrappers import unwrap as _u, wrap_function_wrapper as _w, function_wrapper
 from .wrappers import WrapperComponent, WrapperRenderer, WrapperMiddleware, WrapperRouter, MOLTEN_ROUTE
 
 MOLTEN_VERSION = tuple(map(int, molten.__version__.split()[0].split('.')))
@@ -90,7 +87,7 @@ def patch_app_call(wrapped, instance, args, kwargs):
             config.molten.get_analytics_sample_rate(use_global_config=True)
         )
 
-        @wrapt.function_wrapper
+        @function_wrapper
         def _w_start_response(wrapped, instance, args, kwargs):
             """ Patch respond handling to set metadata """
 

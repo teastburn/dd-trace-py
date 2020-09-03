@@ -1,12 +1,11 @@
 from ddtrace import config
-from ddtrace.vendor import wrapt
 import pylons.wsgiapp
 
 from ddtrace import tracer, Pin
 
 from .middleware import PylonsTraceMiddleware
 from ...utils.formats import asbool, get_env
-from ...utils.wrappers import unwrap as _u
+from ...utils.wrappers import wrap_function_wrapper as _w, unwrap as _u
 
 
 def patch():
@@ -15,7 +14,7 @@ def patch():
         return
 
     setattr(pylons.wsgiapp, '_datadog_patch', True)
-    wrapt.wrap_function_wrapper('pylons.wsgiapp', 'PylonsApp.__init__', traced_init)
+    _w('pylons.wsgiapp', 'PylonsApp.__init__', traced_init)
 
 
 def unpatch():

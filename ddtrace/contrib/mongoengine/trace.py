@@ -1,16 +1,13 @@
-
-# 3p
-from ddtrace.vendor import wrapt
-
 # project
 import ddtrace
 from ddtrace.ext import mongo as mongox
 from ddtrace.contrib.pymongo.client import TracedMongoClient
+from ddtrace.utils.wrappers import ObjectProxy
 
 
 # TODO(Benjamin): we should instrument register_connection instead, because more generic
 # We should also extract the "alias" attribute and set it as a meta
-class WrappedConnect(wrapt.ObjectProxy):
+class WrappedConnect(ObjectProxy):
     """ WrappedConnect wraps mongoengines 'connect' function to ensure
         that all returned connections are wrapped for tracing.
     """

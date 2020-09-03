@@ -1,14 +1,12 @@
 # 3p
 import MySQLdb
 
-from ddtrace.vendor.wrapt import wrap_function_wrapper as _w
-
 # project
 from ddtrace import Pin
 from ddtrace.contrib.dbapi import TracedConnection
 
 from ...ext import net, db
-from ...utils.wrappers import unwrap as _u
+from ...utils.wrappers import unwrap as _u, wrap_function_wrapper as _w
 
 KWPOS_BY_TAG = {
     net.TARGET_HOST: ('host', 0),

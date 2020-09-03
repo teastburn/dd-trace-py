@@ -1,7 +1,6 @@
 import sys
 
 # 3p
-from ddtrace.vendor import wrapt
 import pymemcache
 from pymemcache.client.base import Client
 from pymemcache.exceptions import (
@@ -19,6 +18,7 @@ from ...ext import SpanTypes, net, memcached as memcachedx
 from ...internal.logger import get_logger
 from ...pin import Pin
 from ...settings import config
+from ...wrappers import ObjectProxy
 
 log = get_logger(__name__)
 
@@ -27,7 +27,7 @@ log = get_logger(__name__)
 _Client = Client
 
 
-class WrappedClient(wrapt.ObjectProxy):
+class WrappedClient(ObjectProxy):
     """Wrapper providing patched methods of a pymemcache Client.
 
     Relevant connection information is obtained during initialization and

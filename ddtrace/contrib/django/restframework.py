@@ -1,8 +1,6 @@
-from ddtrace.vendor.wrapt import wrap_function_wrapper as wrap
-
 import rest_framework.views
 
-from ...utils.wrappers import iswrapped
+from ...utils.wrappers import iswrapped, wrap_function_wrapper as _w
 from .patch import with_traced_module
 
 
@@ -30,4 +28,4 @@ def patch_restframework(django):
 
     # trace the handle_exception method
     if not iswrapped(rest_framework.views.APIView, "handle_exception"):
-        wrap("rest_framework.views", "APIView.handle_exception", _traced_handle_exception(django))
+        _w("rest_framework.views", "APIView.handle_exception", _traced_handle_exception(django))

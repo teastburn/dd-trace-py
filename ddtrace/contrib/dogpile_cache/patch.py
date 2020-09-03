@@ -1,7 +1,7 @@
 import dogpile
 
 from ddtrace.pin import Pin, _DD_PIN_NAME, _DD_PIN_PROXY_NAME
-from ddtrace.vendor.wrapt import wrap_function_wrapper as _w
+from ddtrace.utils.wrappers import wrap_function_wrapper as _w
 
 from .lock import _wrap_lock_ctor
 from .region import _wrap_get_create, _wrap_get_create_multi

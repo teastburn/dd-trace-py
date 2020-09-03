@@ -1,10 +1,8 @@
 import ddtrace
 import tornado
 
-from ddtrace.vendor.wrapt import wrap_function_wrapper as _w
-
 from . import handlers, application, decorators, template, compat, context_provider
-from ...utils.wrappers import unwrap as _u
+from ...utils.wrappers import unwrap as _u, wrap_function_wrapper as _w
 
 
 def patch():

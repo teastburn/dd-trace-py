@@ -3,12 +3,11 @@ import asyncio
 
 import aiopg.connection
 import psycopg2.extensions
-from ddtrace.vendor import wrapt
 
 from .connection import AIOTracedConnection
 from ..psycopg.patch import _patch_extensions, \
     _unpatch_extensions, patch_conn as psycopg_patch_conn
-from ...utils.wrappers import unwrap as _u
+from ...utils.wrappers import unwrap as _u, wrap_function_wrapper as _w, ObjectProxy
 
 
 def patch():
@@ -19,7 +18,7 @@ def patch():
         return
     setattr(aiopg, '_datadog_patch', True)
 
-    wrapt.wrap_function_wrapper(aiopg.connection, '_connect', patched_connect)
+    _w(aiopg.connection, '_connect', patched_connect)
     _patch_extensions(_aiopg_extensions)  # do this early just in case
 
 
@@ -43,7 +42,7 @@ def _extensions_register_type(func, _, args, kwargs):
 
     # register_type performs a c-level check of the object
     # type so we must be sure to pass in the actual db connection
-    if scope and isinstance(scope, wrapt.ObjectProxy):
+    if scope and isinstance(scope, ObjectProxy):
         scope = scope.__wrapped__._conn
 
     return func(obj, scope) if scope else func(obj)

@@ -1,6 +1,5 @@
 # 3p
 import redis
-from ddtrace.vendor import wrapt
 
 # project
 from ddtrace import config
@@ -8,7 +7,7 @@ from ddtrace.utils.formats import get_env
 from ...constants import ANALYTICS_SAMPLE_RATE_KEY, SPAN_MEASURED_KEY
 from ...pin import Pin
 from ...ext import SpanTypes, redis as redisx
-from ...utils.wrappers import unwrap
+from ...utils.wrappers import unwrap as _u, wrap_function_wrapper as _w
 from ... import utils
 from .util import format_command_args, _extract_conn_tags
 
@@ -25,8 +24,6 @@ def patch():
     if getattr(redis, "_datadog_patch", False):
         return
     setattr(redis, "_datadog_patch", True)
-
-    _w = wrapt.wrap_function_wrapper
 
     if redis.VERSION < (3, 0, 0):
         _w("redis", "StrictRedis.execute_command", traced_execute_command)
@@ -47,16 +44,16 @@ def unpatch():
         setattr(redis, "_datadog_patch", False)
 
         if redis.VERSION < (3, 0, 0):
-            unwrap(redis.StrictRedis, "execute_command")
-            unwrap(redis.StrictRedis, "pipeline")
-            unwrap(redis.Redis, "pipeline")
-            unwrap(redis.client.BasePipeline, "execute")
-            unwrap(redis.client.BasePipeline, "immediate_execute_command")
+            _u(redis.StrictRedis, "execute_command")
+            _u(redis.StrictRedis, "pipeline")
+            _u(redis.Redis, "pipeline")
+            _u(redis.client.BasePipeline, "execute")
+            _u(redis.client.BasePipeline, "immediate_execute_command")
         else:
-            unwrap(redis.Redis, "execute_command")
-            unwrap(redis.Redis, "pipeline")
-            unwrap(redis.client.Pipeline, "execute")
-            unwrap(redis.client.Pipeline, "immediate_execute_command")
+            _u(redis.Redis, "execute_command")
+            _u(redis.Redis, "pipeline")
+            _u(redis.client.Pipeline, "execute")
+            _u(redis.client.Pipeline, "immediate_execute_command")
 
 
 #

@@ -6,9 +6,7 @@ from ddtrace.constants import ANALYTICS_SAMPLE_RATE_KEY
 from ddtrace.ext import SpanTypes, http
 from ddtrace.http import store_request_headers, store_response_headers
 from ddtrace.propagation.http import HTTPPropagator
-from ddtrace.utils.wrappers import unwrap as _u
-from ddtrace.vendor import wrapt
-from ddtrace.vendor.wrapt import wrap_function_wrapper as _w
+from ddtrace.utils.wrappers import unwrap as _u, wrap_function_wrapper as _w, function_wrapper
 
 from ...internal.logger import get_logger
 
@@ -45,14 +43,14 @@ def _wrap_response_callback(span, callback):
         store_response_headers(response.headers, span, config.sanic)
         span.finish()
 
-    @wrapt.function_wrapper
+    @function_wrapper
     def wrap_sync(wrapped, instance, args, kwargs):
         r = wrapped(*args, **kwargs)
         response = args[0]
         update_span(response)
         return r
 
-    @wrapt.function_wrapper
+    @function_wrapper
     async def wrap_async(wrapped, instance, args, kwargs):
         r = await wrapped(*args, **kwargs)
         response = args[0]

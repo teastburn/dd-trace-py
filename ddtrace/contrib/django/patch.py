@@ -11,7 +11,7 @@ import sys
 from inspect import isclass, isfunction, getmro
 
 from ddtrace import config, Pin
-from ddtrace.vendor import debtcollector, six, wrapt
+from ddtrace.vendor import debtcollector, six
 from ddtrace.constants import ANALYTICS_SAMPLE_RATE_KEY
 from ddtrace.contrib import func_name, dbapi
 from ddtrace.ext import http, sql as sqlx, SpanTypes
@@ -20,13 +20,12 @@ from ddtrace.internal.logger import get_logger
 from ddtrace.propagation.http import HTTPPropagator
 from ddtrace.propagation.utils import from_wsgi_header
 from ddtrace.utils.formats import asbool, get_env
-from ddtrace.utils.wrappers import unwrap, iswrapped
+from ddtrace.utils.wrappers import unwrap as _u, wrap_function_wrapper as _w, iswrapped, FunctionWrapper, ObjectProxy
 
 from .compat import get_resolver, user_is_authenticated
 from . import utils, conf
 
 
-wrap = wrapt.wrap_function_wrapper
 log = get_logger(__name__)
 
 config._add(
@@ -66,7 +65,7 @@ def with_traced_module(func):
 
         def patch():
             import django
-            wrap(django.somefunc, my_traced_wrapper(django))
+            _w(django.somefunc, my_traced_wrapper(django))
     """
 
     def with_mod(mod):
@@ -98,8 +97,8 @@ def patch_conn(django, conn):
         pin = Pin(service, tags=tags, tracer=pin.tracer, app=prefix)
         return dbapi.TracedCursor(func(*args, **kwargs), pin)
 
-    if not isinstance(conn.cursor, wrapt.ObjectProxy):
-        conn.cursor = wrapt.FunctionWrapper(conn.cursor, with_traced_module(cursor)(django))
+    if not isinstance(conn.cursor, ObjectProxy):
+        conn.cursor = FunctionWrapper(conn.cursor, with_traced_module(cursor)(django))
 
 
 def instrument_dbs(django):
@@ -112,10 +111,10 @@ def instrument_dbs(django):
                 log.debug("Error instrumenting database connection %r", conn, exc_info=True)
         return conns
 
-    if not isinstance(django.db.connections.all, wrapt.ObjectProxy):
-        django.db.connections.all = wrapt.FunctionWrapper(django.db.connections.all, all_connections)
+    if not isinstance(django.db.connections.all, ObjectProxy):
+        django.db.connections.all = FunctionWrapper(django.db.connections.all, all_connections)
 
-    if hasattr(django.db, "connection") and not isinstance(django.db.connection.cursor, wrapt.ObjectProxy):
+    if hasattr(django.db, "connection") and not isinstance(django.db.connection.cursor, ObjectProxy):
         patch_conn(django, django.db.connection)
 
 
@@ -179,7 +178,7 @@ def instrument_caches(django):
                 cls = django.utils.module_loading.import_string(cache_path)
                 # DEV: this can be removed when we add an idempotent `wrap`
                 if not iswrapped(cls, method):
-                    wrap(cache_module, "{0}.{1}".format(cache_cls, method), traced_cache(django))
+                    _w(cache_module, "{0}.{1}".format(cache_cls, method), traced_cache(django))
             except Exception:
                 log.debug("Error instrumenting cache %r", cache_path, exc_info=True)
 
@@ -297,9 +296,9 @@ def traced_load_middleware(django, pin, func, instance, args, kwargs):
             def wrapped_factory(func, instance, args, kwargs):
                 # r is the middleware handler function returned from the factory
                 r = func(*args, **kwargs)
-                return wrapt.FunctionWrapper(r, traced_func(django, "django.middleware", resource=mw_path))
+                return FunctionWrapper(r, traced_func(django, "django.middleware", resource=mw_path))
 
-            wrap(base, attr, wrapped_factory)
+            _w(base, attr, wrapped_factory)
 
         # Instrument class-based middleware
         elif isclass(mw):
@@ -311,11 +310,11 @@ def traced_load_middleware(django, pin, func, instance, args, kwargs):
                 "__call__",
             ]:
                 if hasattr(mw, hook) and not iswrapped(mw, hook):
-                    wrap(mw, hook, traced_func(django, "django.middleware", resource=mw_path + ".{0}".format(hook)))
+                    _w(mw, hook, traced_func(django, "django.middleware", resource=mw_path + ".{0}".format(hook)))
             # Do a little extra for `process_exception`
             if hasattr(mw, "process_exception") and not iswrapped(mw, "process_exception"):
                 res = mw_path + ".{0}".format("process_exception")
-                wrap(mw, "process_exception", traced_process_exception(django, "django.middleware", resource=res))
+                _w(mw, "process_exception", traced_process_exception(django, "django.middleware", resource=res))
 
     return func(*args, **kwargs)
 
@@ -502,12 +501,12 @@ def _instrument_view(django, view):
     for name in list(http_method_names) + list(lifecycle_methods):
         try:
             func = getattr(view, name, None)
-            if not func or isinstance(func, wrapt.ObjectProxy):
+            if not func or isinstance(func, ObjectProxy):
                 continue
 
             resource = "{0}.{1}".format(func_name(view), name)
             op_name = "django.view.{0}".format(name)
-            wrap(view, name, traced_func(django, name=op_name, resource=resource))
+            _w(view, name, traced_func(django, name=op_name, resource=resource))
         except Exception:
             log.debug("Failed to instrument Django view %r function %s", view, name, exc_info=True)
 
@@ -519,18 +518,18 @@ def _instrument_view(django, view):
             try:
                 func = getattr(response_cls, name, None)
                 # Do not wrap if the method does not exist or is already wrapped
-                if not func or isinstance(func, wrapt.ObjectProxy):
+                if not func or isinstance(func, ObjectProxy):
                     continue
 
                 resource = "{0}.{1}".format(func_name(response_cls), name)
                 op_name = "django.response.{0}".format(name)
-                wrap(response_cls, name, traced_func(django, name=op_name, resource=resource))
+                _w(response_cls, name, traced_func(django, name=op_name, resource=resource))
             except Exception:
                 log.debug("Failed to instrument Django response %r function %s", response_cls, name, exc_info=True)
 
     # If the view itself is not wrapped, wrap it
-    if not isinstance(view, wrapt.ObjectProxy):
-        view = wrapt.FunctionWrapper(view, traced_func(django, "django.view", resource=func_name(view)))
+    if not isinstance(view, ObjectProxy):
+        view = FunctionWrapper(view, traced_func(django, "django.view", resource=func_name(view)))
     return view
 
 
@@ -559,39 +558,39 @@ def traced_as_view(django, pin, func, instance, args, kwargs):
     except Exception:
         log.debug("Failed to instrument Django view %r", instance, exc_info=True)
     view = func(*args, **kwargs)
-    return wrapt.FunctionWrapper(view, traced_func(django, "django.view", resource=func_name(view)))
+    return FunctionWrapper(view, traced_func(django, "django.view", resource=func_name(view)))
 
 
 def _patch(django):
     Pin(service=config.django["service_name"]).onto(django)
-    wrap(django, "apps.registry.Apps.populate", traced_populate(django))
+    _w(django, "apps.registry.Apps.populate", traced_populate(django))
 
     # DEV: this check will be replaced with import hooks in the future
     if "django.core.handlers.base" not in sys.modules:
         import django.core.handlers.base
 
     if config.django.instrument_middleware:
-        wrap(django, "core.handlers.base.BaseHandler.load_middleware", traced_load_middleware(django))
+        _w(django, "core.handlers.base.BaseHandler.load_middleware", traced_load_middleware(django))
 
-    wrap(django, "core.handlers.base.BaseHandler.get_response", traced_get_response(django))
+    _w(django, "core.handlers.base.BaseHandler.get_response", traced_get_response(django))
 
     # DEV: this check will be replaced with import hooks in the future
     if "django.template.base" not in sys.modules:
         import django.template.base
-    wrap(django, "template.base.Template.render", traced_template_render(django))
+    _w(django, "template.base.Template.render", traced_template_render(django))
 
     # DEV: this check will be replaced with import hooks in the future
     if "django.conf.urls.static" not in sys.modules:
         import django.conf.urls.static
-    wrap(django, "conf.urls.url", traced_urls_path(django))
+    _w(django, "conf.urls.url", traced_urls_path(django))
     if django.VERSION >= (2, 0, 0):
-        wrap(django, "urls.path", traced_urls_path(django))
-        wrap(django, "urls.re_path", traced_urls_path(django))
+        _w(django, "urls.path", traced_urls_path(django))
+        _w(django, "urls.re_path", traced_urls_path(django))
 
     # DEV: this check will be replaced with import hooks in the future
     if "django.views.generic.base" not in sys.modules:
         import django.views.generic.base
-    wrap(django, "views.generic.base.View.as_view", traced_as_view(django))
+    _w(django, "views.generic.base.View.as_view", traced_as_view(django))
 
 
 def patch():
@@ -606,19 +605,19 @@ def patch():
 
 
 def _unpatch(django):
-    unwrap(django.apps.registry.Apps, "populate")
-    unwrap(django.core.handlers.base.BaseHandler, "load_middleware")
-    unwrap(django.core.handlers.base.BaseHandler, "get_response")
-    unwrap(django.template.base.Template, "render")
-    unwrap(django.conf.urls.static, "static")
-    unwrap(django.conf.urls, "url")
+    _u(django.apps.registry.Apps, "populate")
+    _u(django.core.handlers.base.BaseHandler, "load_middleware")
+    _u(django.core.handlers.base.BaseHandler, "get_response")
+    _u(django.template.base.Template, "render")
+    _u(django.conf.urls.static, "static")
+    _u(django.conf.urls, "url")
     if django.VERSION >= (2, 0, 0):
-        unwrap(django.urls, "path")
-        unwrap(django.urls, "re_path")
-    unwrap(django.views.generic.base.View, "as_view")
+        _u(django.urls, "path")
+        _u(django.urls, "re_path")
+    _u(django.views.generic.base.View, "as_view")
     for conn in django.db.connections.all():
-        unwrap(conn, "cursor")
-    unwrap(django.db.connections, "all")
+        _u(conn, "cursor")
+    _u(django.db.connections, "all")
 
 
 def unpatch():

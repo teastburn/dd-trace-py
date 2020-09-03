@@ -4,7 +4,6 @@ import json
 
 # 3p
 import pymongo
-from ddtrace.vendor.wrapt import ObjectProxy
 
 # project
 import ddtrace
@@ -13,6 +12,7 @@ from ...constants import ANALYTICS_SAMPLE_RATE_KEY, SPAN_MEASURED_KEY
 from ...ext import SpanTypes, mongo as mongox, net as netx
 from ...internal.logger import get_logger
 from ...settings import config
+from ...utils.wrappers import ObjectProxy
 from .parse import parse_spec, parse_query, parse_msg
 
 # Original Client class

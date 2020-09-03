@@ -11,7 +11,7 @@ import pyramid.config
 from pyramid.path import caller_package
 
 from ddtrace import config
-from ddtrace.vendor import wrapt
+from ddtrace.utils.wrappers import wrap_function_wrapper as _w
 
 DD_PATCH = '_datadog_patch'
 
@@ -24,7 +24,6 @@ def patch():
         return
 
     setattr(pyramid.config, DD_PATCH, True)
-    _w = wrapt.wrap_function_wrapper
     _w('pyramid.config', 'Configurator.__init__', traced_init)
 
 
@@ -62,7 +61,7 @@ def traced_init(wrapped, instance, args, kwargs):
     if not kwargs.get('package', None):
         # Get the packge for the third frame up from this one.
         #   - ddtrace.contrib.pyramid.path
-        #   - ddtrace.vendor.wrapt
+        #   - ddtrace.utils.wrappers
         #   - (this is the frame we want)
         # DEV: Default is `level=2` which will give us the package from `wrapt`
         kwargs['package'] = caller_package(level=3)

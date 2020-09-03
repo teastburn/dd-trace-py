@@ -1,6 +1,5 @@
 # 3p
 import kombu
-from ddtrace.vendor import wrapt
 
 # project
 from ...constants import ANALYTICS_SAMPLE_RATE_KEY, SPAN_MEASURED_KEY
@@ -9,7 +8,7 @@ from ...pin import Pin
 from ...propagation.http import HTTPPropagator
 from ...settings import config
 from ...utils.formats import get_env
-from ...utils.wrappers import unwrap
+from ...utils.wrappers import unwrap as _u, wrap_function_wrapper as _w
 
 from .constants import DEFAULT_SERVICE
 from .utils import (
@@ -39,7 +38,6 @@ def patch():
         return
     setattr(kombu, '_datadog_patch', True)
 
-    _w = wrapt.wrap_function_wrapper
     # We wrap the _publish method because the publish method:
     # *  defines defaults in its kwargs
     # *  potentially overrides kwargs with values from self
@@ -70,8 +68,8 @@ def patch():
 def unpatch():
     if getattr(kombu, '_datadog_patch', False):
         setattr(kombu, '_datadog_patch', False)
-        unwrap(kombu.Producer, '_publish')
-        unwrap(kombu.Consumer, 'receive')
+        _u(kombu.Producer, '_publish')
+        _u(kombu.Consumer, 'receive')
 
 #
 # tracing functions

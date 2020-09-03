@@ -2,8 +2,7 @@ import contextlib
 import pymongo
 
 from ddtrace import Pin
-from ddtrace.vendor.wrapt import wrap_function_wrapper as _w
-from ...utils.wrappers import unwrap as _u
+from ...utils.wrappers import unwrap as _u, wrap_function_wrapper as _w
 
 from ...ext import mongo as mongox, SpanTypes
 from ...utils.deprecation import deprecated

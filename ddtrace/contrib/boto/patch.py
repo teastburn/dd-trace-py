@@ -1,12 +1,11 @@
 import boto.connection
-from ddtrace.vendor import wrapt
 import inspect
 
 from ddtrace import config
 from ...constants import ANALYTICS_SAMPLE_RATE_KEY, SPAN_MEASURED_KEY
 from ...pin import Pin
 from ...ext import SpanTypes, http, aws
-from ...utils.wrappers import unwrap
+from ...utils.wrappers import unwrap as _u, wrap_function_wrapper as _w
 
 
 # Original boto client class
@@ -34,10 +33,10 @@ def patch():
     # AWSQueryConnection and AWSAuthConnection are two different classes called by
     # different services for connection.
     # For exemple EC2 uses AWSQueryConnection and S3 uses AWSAuthConnection
-    wrapt.wrap_function_wrapper(
+    _w(
         'boto.connection', 'AWSQueryConnection.make_request', patched_query_request
     )
-    wrapt.wrap_function_wrapper(
+    _w(
         'boto.connection', 'AWSAuthConnection.make_request', patched_auth_request
     )
     Pin(service='aws', app='aws').onto(
@@ -51,8 +50,8 @@ def patch():
 def unpatch():
     if getattr(boto.connection, '_datadog_patch', False):
         setattr(boto.connection, '_datadog_patch', False)
-        unwrap(boto.connection.AWSQueryConnection, 'make_request')
-        unwrap(boto.connection.AWSAuthConnection, 'make_request')
+        _u(boto.connection.AWSQueryConnection, 'make_request')
+        _u(boto.connection.AWSAuthConnection, 'make_request')
 
 
 # ec2, sqs, kinesis
@@ -115,7 +114,7 @@ def patched_auth_request(original_func, instance, args, kwargs):
     # Go up the stack until we get the first non-ddtrace module
     # DEV: For `lambda.list_functions()` this should be:
     #        - ddtrace.contrib.boto.patch
-    #        - ddtrace.vendor.wrapt.wrappers
+    #        - ddtrace.utils.wrappers
     #        - boto.awslambda.layer1 (make_request)
     #        - boto.awslambda.layer1 (list_functions)
     # But can vary depending on Python versions; that's why we use an heuristic

@@ -1,7 +1,6 @@
 import pyramid.renderers
 from pyramid.settings import asbool
 from pyramid.httpexceptions import HTTPException
-from ddtrace.vendor import wrapt
 
 # project
 import ddtrace
@@ -10,6 +9,7 @@ from ...ext import SpanTypes, http
 from ...internal.logger import get_logger
 from ...propagation.http import HTTPPropagator
 from ...settings import config
+from ...utils.wrappers import wrap_function_wrapper as _w, ObjectProxy
 from .constants import (
     SETTINGS_TRACER,
     SETTINGS_SERVICE,
@@ -34,8 +34,8 @@ def includeme(config):
     # Add our tween just before the default exception handler
     config.add_tween(DD_TWEEN_NAME, over=pyramid.tweens.EXCVIEW)
     # ensure we only patch the renderer once.
-    if not isinstance(pyramid.renderers.RendererHelper.render, wrapt.ObjectProxy):
-        wrapt.wrap_function_wrapper('pyramid.renderers', 'RendererHelper.render', trace_render)
+    if not isinstance(pyramid.renderers.RendererHelper.render, ObjectProxy):
+        _w('pyramid.renderers', 'RendererHelper.render', trace_render)
 
 
 def trace_render(func, instance, args, kwargs):

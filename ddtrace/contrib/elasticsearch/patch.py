@@ -1,14 +1,12 @@
 from importlib import import_module
 
-from ddtrace.vendor.wrapt import wrap_function_wrapper as _w
-
 from .quantize import quantize
 
 from ...compat import urlencode
 from ...constants import ANALYTICS_SAMPLE_RATE_KEY, SPAN_MEASURED_KEY
 from ...ext import SpanTypes, elasticsearch as metadata, http
 from ...pin import Pin
-from ...utils.wrappers import unwrap as _u
+from ...utils.wrappers import wrap_function_wrapper as _w, unwrap as _u
 from ...settings import config
 
 
@@ -111,7 +109,7 @@ def _get_perform_request(elasticsearch):
 
 
 # Backwards compatibility for anyone who decided to import `ddtrace.contrib.elasticsearch.patch._perform_request`
-# DEV: `_perform_request` is a `wrapt.FunctionWrapper`
+# DEV: `_perform_request` is a `FunctionWrapper`
 try:
     # DEV: Import as `es` to not shadow loop variables above
     import elasticsearch as es

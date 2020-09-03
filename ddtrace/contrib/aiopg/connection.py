@@ -1,5 +1,4 @@
 import asyncio
-from ddtrace.vendor import wrapt
 
 from aiopg.utils import _ContextManager
 
@@ -8,9 +7,10 @@ from ...constants import ANALYTICS_SAMPLE_RATE_KEY, SPAN_MEASURED_KEY
 from ...ext import SpanTypes, sql
 from ...pin import Pin
 from ...settings import config
+from ...utils.wrappers import ObjectProxy
 
 
-class AIOTracedCursor(wrapt.ObjectProxy):
+class AIOTracedCursor(ObjectProxy):
     """ TracedCursor wraps a psql cursor and traces its queries. """
 
     def __init__(self, cursor, pin):
@@ -71,7 +71,7 @@ class AIOTracedCursor(wrapt.ObjectProxy):
         return self.__wrapped__.__aiter__()
 
 
-class AIOTracedConnection(wrapt.ObjectProxy):
+class AIOTracedConnection(ObjectProxy):
     """ TracedConnection wraps a Connection with tracing code. """
 
     def __init__(self, conn, pin=None, cursor_cls=AIOTracedCursor):

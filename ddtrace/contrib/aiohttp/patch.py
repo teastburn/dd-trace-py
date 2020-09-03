@@ -1,8 +1,7 @@
 from ddtrace import config
-from ddtrace.vendor import wrapt
 
 from ...pin import Pin
-from ...utils.wrappers import unwrap
+from ...utils.wrappers import unwrap as _u, wrap_function_wrapper as _w
 
 
 try:
@@ -25,7 +24,6 @@ def patch():
             return
         setattr(aiohttp_jinja2, '__datadog_patch', True)
 
-        _w = wrapt.wrap_function_wrapper
         _w('aiohttp_jinja2', 'render_template', _trace_render_template)
         Pin(app='aiohttp', service=config.service).onto(aiohttp_jinja2)
 
@@ -37,4 +35,4 @@ def unpatch():
     if template_module:
         if getattr(aiohttp_jinja2, '__datadog_patch', False):
             setattr(aiohttp_jinja2, '__datadog_patch', False)
-            unwrap(aiohttp_jinja2, 'render_template')
+            _u(aiohttp_jinja2, 'render_template')

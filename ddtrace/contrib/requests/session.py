@@ -1,8 +1,7 @@
 import requests
 
-from ddtrace.vendor.wrapt import wrap_function_wrapper as _w
-
 from .connection import _wrap_send
+from ...utils.wrappers import wrap_function_wrapper as _w
 
 
 class TracedSession(requests.Session):

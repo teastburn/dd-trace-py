@@ -8,7 +8,7 @@ from ...internal.logger import get_logger
 from ...pin import Pin
 from ...settings import config
 from ...utils.formats import asbool, get_env
-from ...vendor import wrapt
+from ...utils.wrappers import ObjectProxy
 
 
 log = get_logger(__name__)
@@ -18,7 +18,7 @@ config._add('dbapi2', dict(
 ))
 
 
-class TracedCursor(wrapt.ObjectProxy):
+class TracedCursor(ObjectProxy):
     """ TracedCursor wraps a psql cursor and traces its queries. """
 
     def __init__(self, cursor, pin):
@@ -143,7 +143,7 @@ class FetchTracedCursor(TracedCursor):
                                   *args, **kwargs)
 
 
-class TracedConnection(wrapt.ObjectProxy):
+class TracedConnection(ObjectProxy):
     """ TracedConnection wraps a Connection with tracing code. """
 
     def __init__(self, conn, pin=None, cursor_cls=None):

@@ -1,6 +1,3 @@
-# Third party
-from ddtrace.vendor import wrapt
-
 # Project
 from ...compat import PY2, httplib, parse
 from ...constants import ANALYTICS_SAMPLE_RATE_KEY
@@ -11,7 +8,7 @@ from ...pin import Pin
 from ...propagation.http import HTTPPropagator
 from ...settings import config
 from ...utils.formats import asbool, get_env
-from ...utils.wrappers import unwrap as _u
+from ...utils.wrappers import unwrap as _u, wrap_function_wrapper as _w
 
 span_name = 'httplib.request' if PY2 else 'http.client.request'
 
@@ -154,16 +151,11 @@ def patch():
     setattr(httplib, '__datadog_patch', True)
 
     # Patch the desired methods
-    setattr(httplib.HTTPConnection, '__init__',
-            wrapt.FunctionWrapper(httplib.HTTPConnection.__init__, _wrap_init))
-    setattr(httplib.HTTPConnection, 'getresponse',
-            wrapt.FunctionWrapper(httplib.HTTPConnection.getresponse, _wrap_getresponse))
-    setattr(httplib.HTTPConnection, 'request',
-            wrapt.FunctionWrapper(httplib.HTTPConnection.request, _wrap_request))
-    setattr(httplib.HTTPConnection, 'putrequest',
-            wrapt.FunctionWrapper(httplib.HTTPConnection.putrequest, _wrap_putrequest))
-    setattr(httplib.HTTPConnection, 'putheader',
-            wrapt.FunctionWrapper(httplib.HTTPConnection.putheader, _wrap_putheader))
+    _w(httplib.HTTPConnection, '__init__', _wrap_init)
+    _w(httplib.HTTPConnection, 'getresponse', _wrap_getresponse)
+    _w(httplib.HTTPConnection, 'request', _wrap_request)
+    _w(httplib.HTTPConnection, 'putrequest', _wrap_putrequest)
+    _w(httplib.HTTPConnection, 'putheader', _wrap_putheader)
 
 
 def unpatch():

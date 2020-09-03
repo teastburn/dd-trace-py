@@ -4,6 +4,26 @@ import inspect
 from .deprecation import deprecated
 
 
+def _wrap_object(module, name, factory, args=(), kwargs={}):
+    (parent, attribute, original) = wrapt.wrappers.resolve_path(module, name)
+    # avoid wrapping if object already wrapped
+    if hasattr(original, "__wrapped__"):
+        return original
+    wrapper = factory(original, *args, **kwargs)
+    wrapt.wrappers.apply_patch(parent, attribute, wrapper)
+    return wrapper
+
+
+def wrap_function_wrapper(module, name, wrapper):
+    return _wrap_object(module, name, wrapt.FunctionWrapper, (wrapper,))
+
+
+FunctionWrapper = wrapt.FunctionWrapper
+function_wrapper = wrapt.wrappers.function_wrapper
+patch_function_wrapper = wrapt.patch_function_wrapper
+ObjectProxy = wrapt.ObjectProxy
+
+
 def iswrapped(obj, attr=None):
     """Returns whether an attribute is wrapped or not."""
     if attr is not None:

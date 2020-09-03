@@ -1,6 +1,5 @@
 import flask
 import werkzeug
-from ddtrace.vendor.wrapt import wrap_function_wrapper as _w
 
 from ddtrace import compat
 from ddtrace import config, Pin
@@ -9,7 +8,7 @@ from ...constants import ANALYTICS_SAMPLE_RATE_KEY, SPAN_MEASURED_KEY
 from ...ext import SpanTypes, http
 from ...internal.logger import get_logger
 from ...propagation.http import HTTPPropagator
-from ...utils.wrappers import unwrap as _u
+from ...utils.wrappers import unwrap as _u, wrap_function_wrapper as _w
 from .helpers import get_current_app, get_current_span, simple_tracer, with_instance_pin
 from .wrappers import wrap_function, wrap_signal
 

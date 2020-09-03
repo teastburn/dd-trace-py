@@ -1,11 +1,11 @@
 # 3p
-from ddtrace.vendor import wrapt
 import pymysql
 
 # project
 from ddtrace import Pin
 from ddtrace.contrib.dbapi import TracedConnection
 from ...ext import net, db
+from ...utils.wrappers import wrap_function_wrapper as _w, unwrap as _u
 
 CONN_ATTR_BY_TAG = {
     net.TARGET_HOST: 'host',
@@ -16,12 +16,11 @@ CONN_ATTR_BY_TAG = {
 
 
 def patch():
-    wrapt.wrap_function_wrapper('pymysql', 'connect', _connect)
+    _w('pymysql', 'connect', _connect)
 
 
 def unpatch():
-    if isinstance(pymysql.connect, wrapt.ObjectProxy):
-        pymysql.connect = pymysql.connect.__wrapped__
+    _u(pymysql, "connect")
 
 
 def _connect(func, instance, args, kwargs):

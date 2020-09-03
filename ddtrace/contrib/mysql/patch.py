@@ -1,11 +1,11 @@
 # 3p
-from ddtrace.vendor import wrapt
 import mysql.connector
 
 # project
 from ddtrace import Pin
 from ddtrace.contrib.dbapi import TracedConnection
 from ...ext import net, db
+from ...utils.wrappers import wrap_function_wrapper as _w, ObjectProxy
 
 
 CONN_ATTR_BY_TAG = {
@@ -17,14 +17,14 @@ CONN_ATTR_BY_TAG = {
 
 
 def patch():
-    wrapt.wrap_function_wrapper('mysql.connector', 'connect', _connect)
+    _w('mysql.connector', 'connect', _connect)
     # `Connect` is an alias for `connect`, patch it too
     if hasattr(mysql.connector, 'Connect'):
         mysql.connector.Connect = mysql.connector.connect
 
 
 def unpatch():
-    if isinstance(mysql.connector.connect, wrapt.ObjectProxy):
+    if isinstance(mysql.connector.connect, ObjectProxy):
         mysql.connector.connect = mysql.connector.connect.__wrapped__
         if hasattr(mysql.connector, 'Connect'):
             mysql.connector.Connect = mysql.connector.connect
