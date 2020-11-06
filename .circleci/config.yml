@@ -351,11 +351,11 @@ jobs:
       - run_tox_scenario:
           pattern: '^py..-opentracer'
 
-  profile:
+  profiling:
     <<: *contrib_job
     steps:
-      - run_tox_scenario:
-          pattern: '^py..-profile'
+      - run_test:
+          pattern: "profiling"
 
   integration:
     <<: *contrib_job
@@ -885,7 +885,7 @@ requires_tests: &requires_tests
   - httplib
   - integration
   - vendor
-  - profile
+  - profiling
   - jinja2
   - kombu
   - mako
@@ -988,7 +988,7 @@ workflows:
       - httplib: *requires_pre_test
       - integration: *requires_pre_test
       - vendor: *requires_pre_test
-      - profile: *requires_pre_test
+      - profiling: *requires_pre_test
       - jinja2: *requires_pre_test
       - kombu: *requires_pre_test
       - mako: *requires_pre_test
