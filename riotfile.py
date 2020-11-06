@@ -115,4 +115,47 @@ suites = [
             ),
         ],
     ),
+    Suite(
+        name="celery",
+        command="pytest tests/contrib/celery",
+        cases=[
+            # Non-4.x celery should be able to use the older redis lib, since it locks to an older kombu
+            Case(
+                pys=[2.7, 3.5, 3.6],
+                pkgs=[
+                    ("celery", [">=3.1,<3.2"]),
+                    ("redis", [">=2.10,<2.11"]),
+                ],
+            ),
+            # 4.x celery bumps kombu to 4.4+, which requires redis 3.2 or later, this tests against
+            # older redis with an older kombu, and newer kombu/newer redis.
+            # https://github.com/celery/kombu/blob/3e60e6503a77b9b1a987cf7954659929abac9bac/Changelog#L35
+            Case(
+                pys=[2.7, 3.5, 3.6],
+                pkgs=[
+                    ("celery", [">=4.0,<4.1", ">=4.1,<4.2"]),
+                    ("redis", [">=2.10,<2.11", ">=3.2,<3.3"]),
+                    ("kombu", [">=4.3,<4.4", ">=4.4,<4.5"]),
+                    ("pytest", [">=3,<4"]),
+                ],
+            ),
+            # Celery 4.2 is now limited to Kombu 4.3
+            # https://github.com/celery/celery/commit/1571d414461f01ae55be63a03e2adaa94dbcb15d
+            Case(
+                pys=[2.7, 3.5, 3.6],
+                pkgs=[
+                    ("celery", [">=4.2,<4.3"]),
+                    ("redis", [">=2.10,<2.11"]),
+                    ("kombu", [">=4.3,<4.4"]),
+                    ("pytest", [">=3,<4"]),
+                ],
+            ),
+            # Celery 4.3 wants Kombu >= 4.4 and Redis >= 3.2
+            # Python 3.7 needs Celery 4.3
+            Case(
+                pys=[2.7, 3.5, 3.6, 3.7, 3.8, 3.9],
+                pkgs=[("celery", [">=4.3,<4.4"]), ("redis", [">=3.2,<3.3"]), ("kombu", [">=4.4,<4.5"])],
+            ),
+        ],
+    ),
 ]
