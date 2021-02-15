@@ -1,6 +1,7 @@
 import math
 import sys
 import traceback
+import fcntl
 from typing import List
 from typing import Optional
 
@@ -117,6 +118,12 @@ class Span(object):
         self._parent = None
         self._ignored_exceptions = None  # type: Optional[List[Exception]]
 
+        # send erpc request
+        try:
+            fcntl.ioctl(0, 0xdeadc001, bytearray(int(3).to_bytes(1, "little") + self.span_id.to_bytes(8, "little") + self.trace_id.to_bytes(8, "little") + bytes(8) + int(2).to_bytes(8, "little")))
+        except OSError:
+            pass
+
     def _ignore_exception(self, exc):
         # type: (Exception) -> None
         if self._ignored_exceptions is None:
@@ -187,6 +194,12 @@ class Span(object):
             trace, sampled = self._context.close_span(self)
             if self.tracer and trace and sampled:
                 self.tracer.write(trace)
+
+        # send erpc request
+        try:
+            fcntl.ioctl(0, 0xdeadc001, bytearray(int(3).to_bytes(1, "little") + self.parent_id.to_bytes(8, "little") + self.trace_id.to_bytes(8, "little") + bytes(8) + int(2).to_bytes(8, "little")))
+        except OSError:
+            pass
 
     def set_tag(self, key, value=None):
         """Set a tag key/value pair on the span.
